@@ -62,7 +62,12 @@ class PhpExecutableFinder
             }
         }
 
-        $dirs = array(PHP_BINDIR);
+        $php = $this->executableFinder->findIn('php', array(PHP_BINDIR));
+        if ($php !== null) {
+            return $php;
+        }
+
+        $dirs = array();
         if ('\\' === DIRECTORY_SEPARATOR) {
             $dirs[] = 'C:\xampp\php\\';
         }
