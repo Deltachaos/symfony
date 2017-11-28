@@ -23,6 +23,8 @@ class ExecutableFinder
 
     /**
      * Replaces default suffixes of executable.
+     *
+     * @param array $suffixes
      */
     public function setSuffixes(array $suffixes)
     {
@@ -40,15 +42,40 @@ class ExecutableFinder
     }
 
     /**
-     * Finds an executable by name.
+     * Finds an executable by name in given directories.
      *
-     * @param string $name      The executable name (without the extension)
-     * @param string $default   The default to return if no executable is found
-     * @param array  $extraDirs Additional dirs to check into
+     * @param string $name    The executable name (without the extension)
+     * @param array  $dirs    Dirs to check into
+     * @param string $default The default to return if no executable is found
      *
      * @return string The executable path or default value
      */
-    public function find($name, $default = null, array $extraDirs = array())
+    public function findIn($name, array $dirs = array(), $default = null)
+    {
+        $suffixes = array('');
+        if ('\\' === DIRECTORY_SEPARATOR) {
+            $pathExt = getenv('PATHEXT');
+            $suffixes = array_merge($suffixes, $pathExt ? explode(PATH_SEPARATOR, $pathExt) : $this->suffixes);
+        }
+        foreach ($suffixes as $suffix) {
+            foreach ($dirs as $dir) {
+                if (@is_file($file = $dir.DIRECTORY_SEPARATOR.$name.$suffix) && ('\\' === DIRECTORY_SEPARATOR || is_executable($file))) {
+                    return $file;
+                }
+            }
+        }
+
+        return $default;
+    }
+
+    /**
+     * Returns the search path directories from environment
+     *
+     * @param array $extraDirs Additional dirs to check into
+     *
+     * @return string[] The search paths
+     */
+    public function path(array $extraDirs = array())
     {
         if (ini_get('open_basedir')) {
             $searchPath = explode(PATH_SEPARATOR, ini_get('open_basedir'));
@@ -70,19 +97,24 @@ class ExecutableFinder
             );
         }
 
-        $suffixes = array('');
-        if ('\\' === DIRECTORY_SEPARATOR) {
-            $pathExt = getenv('PATHEXT');
-            $suffixes = array_merge($suffixes, $pathExt ? explode(PATH_SEPARATOR, $pathExt) : $this->suffixes);
-        }
-        foreach ($suffixes as $suffix) {
-            foreach ($dirs as $dir) {
-                if (@is_file($file = $dir.DIRECTORY_SEPARATOR.$name.$suffix) && ('\\' === DIRECTORY_SEPARATOR || is_executable($file))) {
-                    return $file;
-                }
-            }
-        }
+        return $dirs;
+    }
 
-        return $default;
+    /**
+     * Finds an executable by name.
+     *
+     * @param string $name      The executable name (without the extension)
+     * @param string $default   The default to return if no executable is found
+     * @param array  $extraDirs Additional dirs to check into
+     *
+     * @return string The executable path or default value
+     */
+    public function find($name, $default = null, array $extraDirs = array())
+    {
+        return $this->findIn(
+            $name,
+            $this->path($extraDirs),
+            $default
+        );
     }
 }
