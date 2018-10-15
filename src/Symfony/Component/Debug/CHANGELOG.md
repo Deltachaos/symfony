@@ -1,6 +1,13 @@
 CHANGELOG
 =========
 
+4.2.0
+-----
+
+* added `Exception\FlattenException::__toString` and
+`Exception\FlattenException::getTraceAsString` to increase compatibility to php
+exception objects
+
 4.0.0
 -----
 

@@ -346,6 +346,37 @@ class FlattenExceptionTest extends TestCase
         $this->assertSame('Class "RuntimeException@anonymous" blah.', $flattened->getMessage());
     }
 
+    public function testTraceAsStringEmptyMessage()
+    {
+        $exception = new \RuntimeException();
+
+        $flattened = FlattenException::create($exception);
+
+        $this->assertSame($exception->getTraceAsString(), $flattened->getTraceAsString());
+    }
+
+    public function testTraceAsString()
+    {
+        $test = function ($a, $b, $c, $d) {
+            return new \RuntimeException('This is a test message');
+        };
+
+        $exception = $test('foo123', 1, null, 1.5);
+
+        $flattened = FlattenException::create($exception);
+
+        $this->assertSame($exception->getTraceAsString(), $flattened->getTraceAsString());
+    }
+
+    public function testToString()
+    {
+        $exception = new \RuntimeException('This is a test message');
+
+        $flattened = FlattenException::create($exception);
+
+        $this->assertSame($exception->__toString(), $flattened->__toString());
+    }
+
     private function createException($foo)
     {
         return new \Exception();

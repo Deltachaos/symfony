@@ -324,4 +324,100 @@ class FlattenException
 
         return $array['__PHP_Incomplete_Class_Name'];
     }
+
+    protected static function traceArgumentsToString($arguments)
+    {
+        $trace = '(';
+
+        if (!empty($arguments)) {
+            foreach ($arguments as $argument) {
+                $type = array_shift($argument);
+
+                switch ($type) {
+                    case 'object':
+                        $trace .= ucfirst($type).'('.$argument[0].')';
+                        break;
+                    case 'boolean':
+                        $trace .= $argument[0] ? 'true' : 'false';
+                        break;
+                    case 'string':
+                        $trace .= "'".$argument[0]."'";
+                        break;
+                    case 'integer':
+                        $trace .= $argument[0];
+                        break;
+                    case 'float':
+                        $trace .= $argument[0];
+                        break;
+                    case 'null':
+                        $trace .= 'NULL';
+                        break;
+                    default:
+                        $trace .= ucfirst($type);
+                        break;
+                }
+
+                $trace .= ', ';
+            }
+
+            $trace = rtrim($trace, ', ');
+        }
+
+        $trace .= ')';
+
+        return $trace;
+    }
+
+    public function getTraceAsString()
+    {
+        $trace = '';
+
+        $items = $this->trace;
+        array_shift($items);
+
+        $i = -1;
+
+        foreach ($items as $i => $item) {
+            $trace .= '#'.$i.' ';
+            if (!empty($item['file'])) {
+                $trace .= $item['file'].'('.$item['line'].'): ';
+            }
+
+            if (!empty($item['function'])) {
+                if (!empty($item['class'])) {
+                    $trace .= $item['class'].$item['type'];
+                }
+                $trace .= $item['function'];
+                $trace .= self::traceArgumentsToString(
+                    !empty($item['args']) ? $item['args'] : array()
+                );
+            }
+
+            $trace .= "\n";
+        }
+
+        ++$i;
+
+        $trace .= '#'.$i.' {main}';
+
+        return $trace;
+    }
+
+    public function __toString()
+    {
+        $message = '';
+
+        foreach (array_merge(array($this), $this->getAllPrevious()) as $exception) {
+            $message .= $exception->getClass();
+
+            if ('' != $exception->getMessage()) {
+                $message .= ': '.$exception->getMessage();
+            }
+
+            $message .= ' in '.$exception->getFile().':'.$exception->getLine().
+                "\nStack trace:\n".$exception->getTraceAsString()."\n";
+        }
+
+        return rtrim($message);
+    }
 }
